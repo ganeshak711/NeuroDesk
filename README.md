@@ -1,29 +1,25 @@
-# AI-Augmented Collaborative Workspace
+🤖 AI-Augmented Collaborative Workspace
 
-A Notion-style team workspace (documents, tasks, comments) with a **RAG-powered AI assistant** that answers questions grounded in your team's own data, streamed live over Server-Sent Events.
+A Notion-style team workspace (documents, tasks, comments) with a RAG-powered AI assistant that answers questions grounded in your team's own data, streamed live over Server-Sent Events (SSE).
 
-## Stack
-
-- **Backend:** Node.js + Express + MongoDB (Mongoose)
-- **Auth:** JWT, role-based access control (owner / admin / member / viewer)
-- **RAG pipeline:** local open embedding model (`@xenova/transformers`, all-MiniLM-L6-v2 — runs on-device, no API key) → MongoDB Atlas Vector Search → Claude (Anthropic API) → SSE streaming to the browser
-- **Frontend:** vanilla HTML/CSS/JS
-- **Containerization:** Docker + docker-compose (backend, frontend, mongo)
-
-## Project structure
-
-```
+⚙️ Stack
+Backend: Node.js + Express + MongoDB (Mongoose)
+Auth: JWT, role-based access control (owner / admin / member / viewer)
+RAG pipeline: local open embedding model (@xenova/transformers, all-MiniLM-L6-v2 — runs on-device, no API key) → MongoDB Atlas Vector Search → Google Gemini API → SSE streaming to the browser
+Frontend: vanilla HTML/CSS/JS
+Containerization: Docker + docker-compose (backend, frontend, mongo)
+📁 Project Structure
 ai-workspace/
 ├── backend/
 │   ├── src/
-│   │   ├── config/db.js            # Mongo connection
-│   │   ├── models/                 # User, Workspace, Document, Task, Comment, EmbeddingChunk
-│   │   ├── middleware/             # JWT auth + workspace role checks
-│   │   ├── routes/                 # auth, workspaces, documents, tasks, comments, ai
+│   │   ├── config/db.js
+│   │   ├── models/
+│   │   ├── middleware/
+│   │   ├── routes/
 │   │   ├── services/
-│   │   │   ├── embeddingService.js # local embedding model + text chunking
-│   │   │   ├── ragService.js       # indexing + $vectorSearch retrieval
-│   │   │   └── llmService.js       # Claude streaming completion
+│   │   │   ├── embeddingService.js
+│   │   │   ├── ragService.js
+│   │   │   └── llmService.js   # Gemini API integration
 │   │   └── server.js
 │   ├── package.json
 │   ├── .env.example
@@ -34,79 +30,58 @@ ai-workspace/
 │   ├── js/{api,auth,app}.js
 │   └── Dockerfile
 └── docker-compose.yml
-```
-
-## How the RAG pipeline works
-
-1. Whenever a **document**, **task**, or **comment** is created/updated, its text is chunked and embedded locally (`embeddingService.js`) and stored in the `EmbeddingChunk` collection.
-2. When someone asks the AI a question (`GET /api/ai/:workspaceId/ask?q=...`), the question is embedded and MongoDB **Atlas Vector Search** (`$vectorSearch`) retrieves the most relevant chunks, scoped to that workspace.
-3. Those chunks are stitched into a system prompt and sent to Claude, and the reply is **streamed token-by-token** back to the browser over SSE, with the source chunks shown as citations.
-4. If you're running plain local MongoDB (no Atlas Search index), the backend automatically falls back to an in-process cosine-similarity search so development still works — see `ragService.js`.
-
-## Setup
-
-### 1. Backend
-
-```bash
+🧠 How the RAG Pipeline Works
+Whenever a document, task, or comment is created/updated, its text is chunked and embedded locally (embeddingService.js) and stored in the EmbeddingChunk collection.
+When a user asks a question (GET /api/ai/:workspaceId/ask?q=...), the query is embedded and MongoDB Atlas Vector Search retrieves the most relevant chunks for that workspace.
+These chunks are injected into a structured prompt and sent to the Google Gemini API, which generates a context-aware response.
+The response is streamed token-by-token to the frontend using SSE (Server-Sent Events), with referenced chunks shown as citations.
+If Atlas Vector Search is not available, the system falls back to local cosine similarity search for development mode.
+🚀 Setup
+1. Backend
 cd backend
 npm install
 cp .env.example .env
-# then edit .env:
-#   MONGO_URI          -> your MongoDB Atlas connection string
-#   JWT_SECRET          -> any long random string
-#   ANTHROPIC_API_KEY   -> your Anthropic API key
+
+Edit .env:
+
+MONGO_URI=your_mongodb_atlas_connection
+JWT_SECRET=your_secret_key
+GEMINI_API_KEY=your_google_gemini_api_key
+
+Start server:
+
 npm start
-```
+2. Atlas Vector Search (one-time setup)
 
-The first request that triggers an embedding will download the small (~90MB) `all-MiniLM-L6-v2` model automatically — no API key needed for embeddings.
+Create index on EmbeddingChunk collection:
 
-### 2. Enable Atlas Vector Search (one-time, in MongoDB Atlas)
-
-On the `EmbeddingChunk` collection, create a Search Index named `vector_index`:
-
-```json
 {
   "fields": [
     { "type": "vector", "path": "embedding", "numDimensions": 384, "similarity": "cosine" },
     { "type": "filter", "path": "workspace" }
   ]
 }
-```
-
-(Local `mongod` doesn't support `$vectorSearch` — the app falls back automatically for dev, but for the real pipeline you need Atlas.)
-
-### 3. Frontend
-
-Just open `frontend/index.html` in a browser, or serve it with any static server:
-
-```bash
+3. Frontend
 cd frontend
 python3 -m http.server 3000
-```
 
-It talks to the backend at `http://localhost:5000/api` by default (see `js/api.js`).
+Open:
 
-### 4. Or run everything with Docker
+http://localhost:3000
 
-```bash
+Backend runs at:
+
+http://localhost:5000/api
+4. Docker (Full Stack)
 docker-compose up --build
-```
-
-- Frontend → http://localhost:3000
-- Backend → http://localhost:5000
-- Mongo → localhost:27017 (local dev only — swap `MONGO_URI` for Atlas for real vector search)
-
-## API overview
-
-| Method | Route | Description |
-|---|---|---|
-| POST | `/api/auth/register`, `/api/auth/login` | Auth |
-| GET/POST/PATCH/DELETE | `/api/workspaces` | Workspace CRUD + membership |
-| GET/POST/PATCH/DELETE | `/api/workspaces/:id/documents` | Document CRUD |
-| GET/POST/PATCH/DELETE | `/api/workspaces/:id/tasks` | Task CRUD |
-| GET/POST/DELETE | `/api/workspaces/:id/comments` | Comments on docs/tasks |
-| GET (SSE) | `/api/ai/:workspaceId/ask?q=...` | RAG-grounded, streamed AI answer |
-
-## Notes for your resume/portfolio
-
-This maps directly onto your listed bullets: JWT role-based auth, Atlas Vector Search RAG over docs/tasks/comments, SSE streaming, modular REST API, and Docker — all implemented for real in this repo, not just described.
+Frontend → http://localhost:3000
+Backend → http://localhost:5000
+MongoDB → localhost:27017
+📡 API Overview
+Method	Route	Description
+POST	/api/auth/register, /api/auth/login	Authentication
+GET/POST/PATCH/DELETE	/api/workspaces	Workspace management
+GET/POST/PATCH/DELETE	/api/workspaces/:id/documents	Document CRUD
+GET/POST/PATCH/DELETE	/api/workspaces/:id/tasks	Task CRUD
+GET/POST/DELETE	/api/workspaces/:id/comments	Comments
+GET (SSE)	/api/ai/:workspaceId/ask?q=...	RAG-based AI assistant
