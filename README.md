@@ -54,7 +54,7 @@ cp .env.example .env
 # then edit .env:
 #   MONGO_URI          -> your MongoDB Atlas connection string
 #   JWT_SECRET          -> any long random string
-#   ANTHROPIC_API_KEY   -> your Anthropic API key
+#   ANTHROPIC_API_KEY   -> your Google Gemini API  API key 
 npm start
 ```
 
