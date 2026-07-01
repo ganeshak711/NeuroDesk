@@ -106,7 +106,3 @@ docker-compose up --build
 | GET/POST/PATCH/DELETE | `/api/workspaces/:id/tasks` | Task CRUD |
 | GET/POST/DELETE | `/api/workspaces/:id/comments` | Comments on docs/tasks |
 | GET (SSE) | `/api/ai/:workspaceId/ask?q=...` | RAG-grounded, streamed AI answer |
-
-## Notes for your resume/portfolio
-
-This maps directly onto your listed bullets: JWT role-based auth, Atlas Vector Search RAG over docs/tasks/comments, SSE streaming, modular REST API, and Docker — all implemented for real in this repo, not just described.
