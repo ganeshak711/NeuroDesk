@@ -14,15 +14,21 @@ A Notion-style team workspace (documents, tasks, comments) with a **RAG-powered 
 
 ---
 
-## 🧠 RAG Flow
-
-1. Documents/tasks/comments are chunked and embedded
-2. Stored in EmbeddingChunk collection
-3. Query → Vector Search → relevant context
-4. Context → Gemini API → response
-5. SSE streams response to frontend
+## 🧠 How the RAG Pipeline Works
+Whenever a document, task, or comment is created/updated, its text is chunked and embedded locally (embeddingService.js) and stored in the EmbeddingChunk collection.
+When a user asks a question (GET /api/ai/:workspaceId/ask?q=...), the query is embedded and MongoDB Atlas Vector Search retrieves the most relevant chunks for that workspace.
+These chunks are injected into a structured prompt and sent to the Google Gemini API, which generates a context-aware response.
+The response is streamed token-by-token to the frontend using SSE (Server-Sent Events), with referenced chunks shown as citations.
+If Atlas Vector Search is not available, the system falls back to local cosine similarity search for development mode.
 
 ---
+
+## 🚀 Setup
+
+1. Backend
+   cd backend
+   npm install
+   cp .env.example .env
 
 ## 📡 API Overview
 
