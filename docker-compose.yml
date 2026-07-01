@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: aiws-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    # Note: local mongod does NOT support $vectorSearch (Atlas-only feature).
+    # For the RAG pipeline to actually work end-to-end, point MONGO_URI in
+    # backend/.env at a MongoDB Atlas cluster instead of this local service,
+    # and create the "vector_index" Atlas Search index described in
+    # backend/src/models/EmbeddingChunk.js. The app falls back to an
+    # in-process cosine-similarity search automatically if $vectorSearch
+    # isn't available, so local mongo still works for development.
+
+  backend:
+    build: ./backend
+    container_name: aiws-backend
+    depends_on:
+      - mongo
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/ai_workspace}
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: aiws-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

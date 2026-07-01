@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Workspace</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- AUTH SCREEN -->
+  <section id="auth-screen" class="screen">
+    <div class="auth-card">
+      <h1 class="brand">AI Workspace</h1>
+      <p class="muted">A Notion-style workspace with an AI assistant grounded in your team's own data.</p>
+
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="login">Log in</button>
+        <button class="tab-btn" data-tab="register">Sign up</button>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <input type="email" name="email" placeholder="Email" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <button type="submit">Log in</button>
+        <p class="form-error" id="login-error"></p>
+      </form>
+
+      <form id="register-form" class="auth-form hidden">
+        <input type="text" name="name" placeholder="Full name" required />
+        <input type="email" name="email" placeholder="Email" required />
+        <input type="password" name="password" placeholder="Password (min 6 chars)" required minlength="6" />
+        <button type="submit">Create account</button>
+        <p class="form-error" id="register-error"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- APP SHELL -->
+  <section id="app-screen" class="screen hidden">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2 class="brand">AI Workspace</h2>
+        <button id="logout-btn" class="icon-btn" title="Log out">⏻</button>
+      </div>
+
+      <div class="workspace-picker">
+        <select id="workspace-select"></select>
+        <button id="new-workspace-btn" title="New workspace">+</button>
+      </div>
+
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-view="documents">📄 Documents</button>
+        <button class="nav-tab" data-view="tasks">✅ Tasks</button>
+        <button class="nav-tab" data-view="members">👥 Members</button>
+        <button class="nav-tab" data-view="ai">✨ Ask AI</button>
+      </nav>
+
+      <div class="sidebar-footer" id="current-user"></div>
+    </aside>
+
+    <main class="main-panel">
+      <!-- DOCUMENTS VIEW -->
+      <div class="view" id="view-documents">
+        <div class="view-header">
+          <h3>Documents</h3>
+          <button id="new-doc-btn">+ New document</button>
+        </div>
+        <div class="split-panel">
+          <ul class="list" id="doc-list"></ul>
+          <div class="editor-pane hidden" id="doc-editor">
+            <input type="text" id="doc-title" placeholder="Untitled" />
+            <textarea id="doc-content" placeholder="Start writing..."></textarea>
+            <div class="editor-actions">
+              <button id="save-doc-btn">Save</button>
+              <button id="delete-doc-btn" class="danger">Delete</button>
+            </div>
+            <div class="comments-section">
+              <h4>Comments</h4>
+              <ul class="comment-list" id="doc-comments"></ul>
+              <form id="doc-comment-form" class="comment-form">
+                <input type="text" placeholder="Add a comment..." required />
+                <button type="submit">Post</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASKS VIEW -->
+      <div class="view hidden" id="view-tasks">
+        <div class="view-header">
+          <h3>Tasks</h3>
+          <button id="new-task-btn">+ New task</button>
+        </div>
+        <div class="board" id="task-board">
+          <div class="board-column" data-status="todo">
+            <h4>To Do</h4>
+            <ul class="task-list" data-status="todo"></ul>
+          </div>
+          <div class="board-column" data-status="in_progress">
+            <h4>In Progress</h4>
+            <ul class="task-list" data-status="in_progress"></ul>
+          </div>
+          <div class="board-column" data-status="done">
+            <h4>Done</h4>
+            <ul class="task-list" data-status="done"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEMBERS VIEW -->
+      <div class="view hidden" id="view-members">
+        <div class="view-header">
+          <h3>Members</h3>
+        </div>
+        <form id="invite-form" class="inline-form">
+          <input type="email" id="invite-email" placeholder="Email to invite" required />
+          <select id="invite-role">
+            <option value="viewer">Viewer</option>
+            <option value="member" selected>Member</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button type="submit">Invite</button>
+        </form>
+        <ul class="list" id="member-list"></ul>
+      </div>
+
+      <!-- AI VIEW -->
+      <div class="view hidden" id="view-ai">
+        <div class="view-header">
+          <h3>Ask AI about this workspace</h3>
+        </div>
+        <div class="ai-chat">
+          <div class="ai-messages" id="ai-messages"></div>
+          <form id="ai-form" class="ai-input-form">
+            <input type="text" id="ai-question" placeholder="Ask something about your docs, tasks, or comments..." required />
+            <button type="submit">Ask</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- Modal for creating a task -->
+  <div class="modal hidden" id="task-modal">
+    <form class="modal-card" id="task-form">
+      <h3>New Task</h3>
+      <input type="text" id="task-title" placeholder="Task title" required />
+      <textarea id="task-description" placeholder="Description"></textarea>
+      <select id="task-priority">
+        <option value="low">Low priority</option>
+        <option value="medium" selected>Medium priority</option>
+        <option value="high">High priority</option>
+      </select>
+      <div class="modal-actions">
+        <button type="button" id="task-cancel-btn" class="secondary">Cancel</button>
+        <button type="submit">Create</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal for creating a workspace -->
+  <div class="modal hidden" id="workspace-modal">
+    <form class="modal-card" id="workspace-form">
+      <h3>New Workspace</h3>
+      <input type="text" id="workspace-name" placeholder="Workspace name" required />
+      <textarea id="workspace-description" placeholder="Description (optional)"></textarea>
+      <div class="modal-actions">
+        <button type="button" id="workspace-cancel-btn" class="secondary">Cancel</button>
+        <button type="submit">Create</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
