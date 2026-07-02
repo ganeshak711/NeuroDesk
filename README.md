@@ -6,7 +6,7 @@ A Notion-style team workspace (documents, tasks, comments) with a **RAG-powered 
 
 - **Backend:** Node.js + Express + MongoDB (Mongoose)
 - **Auth:** JWT, role-based access control (owner / admin / member / viewer)
-- **RAG pipeline:** local open embedding model (`@xenova/transformers`, all-MiniLM-L6-v2 — runs on-device, no API key) → MongoDB Atlas Vector Search → Claude (Anthropic API) → SSE streaming to the browser
+- **RAG pipeline:** local open embedding model (`@xenova/transformers`, all-MiniLM-L6-v2 — runs on-device, no API key) → MongoDB Atlas Vector Search → Claude (Anthropic API)(I used Gemini Free Api) → SSE streaming to the browser
 - **Frontend:** vanilla HTML/CSS/JS
 - **Containerization:** Docker + docker-compose (backend, frontend, mongo)
 
